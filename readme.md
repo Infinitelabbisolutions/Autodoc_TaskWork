@@ -1,41 +1,41 @@
-# Projeto de Análise de Dados - Autodoc
+# Data Analysis Project - Autodoc
 
-## 📊 Sobre o Projeto
-Este projeto foi desenvolvido como parte de uma task da Autodoc, focando na análise de dados utilizando Python, SQL e Power BI. O objetivo principal é [descreva brevemente o objetivo principal do seu projeto].
+## 📊 About the Project
+This project was developed as part of an Autodoc task, focusing on data analysis using Python, SQL, and Power BI. The main objective is [briefly describe your project's main goal].
 
-## 🛠️ Tecnologias Utilizadas
-- **Python** - Análise e manipulação de dados
+## 🛠️ Technologies Used
+- **Python** - Data analysis and manipulation
   - Pandas
   - NumPy
-  - [Outras bibliotecas relevantes]
-- **SQL** - Consultas e manipulação do banco de dados
-- **Power BI** - Visualização e dashboards
+  - [Other relevant libraries]
+- **SQL** - Database queries and manipulation
+- **Power BI** - Visualization and dashboards
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 ```
-projeto-autodoc/
+project-autodoc/
 │
-├── data/                    # Dados brutos e processados
+├── data/                    # Raw and processed data
 ├── notebooks/              # Jupyter notebooks
-├── scripts/               # Scripts Python e SQL
-├── powerbi/              # Arquivos Power BI
+├── scripts/               # Python and SQL scripts
+├── powerbi/              # Power BI files
 └── README.md
 ```
 
-## 💻 Códigos Principais
+## 💻 Main Code Examples
 
-### Exemplo de Análise em Python
+### Python Analysis Example
 ```python
 import pandas as pd
 import numpy as np
 
-# Exemplo de código de análise
-def analise_dados(df):
-    # Sua análise aqui
-    return resultado
+# Analysis code example
+def analyze_data(df):
+    # Your analysis here
+    return result
 ```
 
-### Exemplo de Consulta SQL
+### SQL Query Example
 ```sql
 SELECT 
     column1,
@@ -46,44 +46,44 @@ GROUP BY column1, column2
 HAVING COUNT(*) > 10;
 ```
 
-## 📈 Visualizações
-[Aqui você pode incluir screenshots dos seus dashboards do Power BI]
+## 📈 Visualizations
+[Here you can include screenshots of your Power BI dashboards]
 
-<img src="/api/placeholder/800/400" alt="Dashboard Principal" />
+<img src="/api/placeholder/800/400" alt="Main Dashboard" />
 
-## 🚀 Como Executar
-1. Clone o repositório
+## 🚀 How to Run
+1. Clone the repository
 ```bash
-git clone [seu-repositorio]
+git clone [your-repository]
 ```
 
-2. Instale as dependências
+2. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Execute os scripts
+3. Run the scripts
 ```bash
 python scripts/main.py
 ```
 
-## 📊 Resultados Principais
-[Descreva os principais insights e resultados obtidos com sua análise]
+## 📊 Key Findings
+[Describe the main insights and results obtained from your analysis]
 
-## 📝 Notas Adicionais
-- [Informações importantes sobre o projeto]
-- [Limitações]
-- [Melhorias futuras]
+## 📝 Additional Notes
+- [Important project information]
+- [Limitations]
+- [Future improvements]
 
-## 👤 Autor
-[Seu Nome]
+## 👤 Author
+[Your Name]
 
-## 📫 Contato
-- LinkedIn: [seu perfil]
-- Email: [seu email]
+## 📫 Contact
+- LinkedIn: [your profile]
+- Email: [your email]
 
-## 🙏 Agradecimentos
-Agradeço à equipe da Autodoc pela oportunidade de desenvolver este projeto.
+## 🙏 Acknowledgments
+Thanks to the Autodoc team for the opportunity to develop this project.
 
 ---
-⭐ Se este projeto foi útil para você, considere dar uma estrela!
+⭐ If this project was helpful to you, consider giving it a star!
