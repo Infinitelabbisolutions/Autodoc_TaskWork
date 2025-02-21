@@ -208,7 +208,7 @@ WITH session_start AS (
     SELECT 
         session,
         user,
-        page_type as first_page_type,
+        MIN(page_type) as first_page_type,
         MIN(event_date) as session_start_time
     FROM user_events
     GROUP BY session, user
@@ -238,12 +238,12 @@ SELECT
     SUM(search_views) as total_search_views,
     SUM(product_views) as total_product_views,
     -- Averages per session
-    ROUND(AVG(CAST(unique_products_viewed AS FLOAT)), 2) as avg_products_per_session,
-    ROUND(AVG(CAST(session_duration_minutes AS FLOAT)), 2) as avg_session_duration,
+    ROUND(AVG(unique_products_viewed), 2) as avg_products_per_session,
+    ROUND(AVG(session_duration_minutes), 2) as avg_session_duration,
     -- Funnel conversion rates
-    ROUND(CAST(SUM(CASE WHEN product_views > 0 THEN 1 ELSE 0 END) AS FLOAT) / 
+    ROUND(SUM(CASE WHEN product_views > 0 THEN 1 ELSE 0 END) / 
           COUNT(DISTINCT session) * 100, 2) as product_view_rate,
-    ROUND(CAST(SUM(CASE WHEN search_views > 0 THEN 1 ELSE 0 END) AS FLOAT) / 
+    ROUND(SUM(CASE WHEN search_views > 0 THEN 1 ELSE 0 END) / 
           COUNT(DISTINCT session) * 100, 2) as search_view_rate
 FROM journey_steps
 GROUP BY first_page_type;
