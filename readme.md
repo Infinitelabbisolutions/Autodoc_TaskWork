@@ -9,8 +9,19 @@ This project was developed as part of an Autodoc task, implementing a robust dat
   - mysql-connector-python - Database connection and operations
   - typing - Type hints for better code maintenance
   - logging - Comprehensive error tracking and operation logging
-- **MySQL** - Data storage and querying
+- **MySQL Workbench 8.0** - Database management and SQL development
+  - Primary tool for SQL query development and testing
+  - Note: SQL syntax may need adjustments if using different database tools
+  - Specific features like `GROUP_CONCAT` and `TIMESTAMPDIFF` are MySQL-specific
 - **Power BI** - Data visualization and dashboards
+
+### ⚠️ Important Note About SQL Compatibility
+The SQL views in this project were developed and tested in MySQL Workbench 8.0. If you're using a different SQL environment, you may need to adjust:
+- Function names (e.g., `TIMESTAMPDIFF` might be different in PostgreSQL)
+- String concatenation syntax (e.g., `GROUP_CONCAT` is MySQL-specific)
+- Date/time functions (may vary across different SQL flavors)
+- Index creation syntax
+- Window function syntax
 
 ## 📁 Project Structure
 ```
@@ -198,7 +209,7 @@ Key features of the implementation:
 - Automated table creation with optimized indexes
 
 ### SQL Analysis
-The project includes several analytical views to understand user behavior and customer journey:
+The project includes several analytical views developed in MySQL Workbench 8.0 to understand user behavior and customer journey. These views use MySQL-specific features and syntax - please note that adjustments may be needed if you're using a different database system:
 
 #### Customer Journey Analysis View
 ```sql
