@@ -73,6 +73,151 @@ def create_table_if_not_exists(cursor) -> None:
     cursor.execute(create_table_query)
 ```
 
+### SQL Analysis
+The project includes several analytical views to understand user behavior and customer journey:
+
+#### Customer Journey Analysis View
+```sql
+CREATE VIEW vw_customer_journey AS
+WITH session_start AS (
+    -- Identifies first page of each session
+    SELECT 
+        session,
+        user,
+        page_type as first_page_type,
+        MIN(event_date) as session_start_time
+    FROM user_events
+    GROUP BY session, user
+),
+journey_steps AS (
+    -- Complete journey analysis
+    SELECT 
+        d.session,
+        d.user,
+        ss.first_page_type,
+        COUNT(DISTINCT CASE WHEN d.page_type = 'listing_page' THEN d.event_date END) as listing_views,
+        COUNT(DISTINCT CASE WHEN d.page_type = 'search_listing_page' THEN d.event_date END) as search_views,
+        COUNT(DISTINCT CASE WHEN d.page_type = 'product_page' THEN d.event_date END) as product_views,
+        COUNT(DISTINCT d.product) as unique_products_viewed,
+        -- Session duration in minutes
+        TIMESTAMPDIFF(MINUTE, MIN(d.event_date), MAX(d.event_date)) as session_duration_minutes
+    FROM user_events d
+    JOIN session_start ss ON d.session = ss.session
+    GROUP BY d.session, d.user, ss.first_page_type
+)
+SELECT 
+    first_page_type,
+    COUNT(DISTINCT session) as total_sessions,
+    COUNT(DISTINCT user) as unique_users,
+    -- Funnel metrics
+    SUM(listing_views) as total_listing_views,
+    SUM(search_views) as total_search_views,
+    SUM(product_views) as total_product_views,
+    -- Averages per session
+    ROUND(AVG(CAST(unique_products_viewed AS FLOAT)), 2) as avg_products_per_session,
+    ROUND(AVG(CAST(session_duration_minutes AS FLOAT)), 2) as avg_session_duration,
+    -- Funnel conversion rates
+    ROUND(CAST(SUM(CASE WHEN product_views > 0 THEN 1 ELSE 0 END) AS FLOAT) / 
+          COUNT(DISTINCT session) * 100, 2) as product_view_rate,
+    ROUND(CAST(SUM(CASE WHEN search_views > 0 THEN 1 ELSE 0 END) AS FLOAT) / 
+          COUNT(DISTINCT session) * 100, 2) as search_view_rate
+FROM journey_steps
+GROUP BY first_page_type;
+```
+
+This view provides comprehensive metrics about the customer journey:
+- Session analysis by entry point (first_page_type)
+- User engagement metrics (views, duration)
+- Funnel conversion rates
+- Product interaction patterns
+
+#### User Behavior Analysis View
+```sql
+CREATE VIEW vw_user_behavior AS 
+WITH user_patterns AS (
+    SELECT 
+        user,
+        session,
+        -- Temporal patterns
+        HOUR(event_date) as hour_of_day,
+        WEEKDAY(event_date) as day_of_week,
+        COUNT(DISTINCT page_type) as pages_types_visited,
+        COUNT(DISTINCT product) as products_viewed,
+        -- Navigation sequence
+        GROUP_CONCAT(page_type ORDER BY event_date SEPARATOR ' > ') as navigation_path
+    FROM user_events
+    GROUP BY 
+        user, 
+        session, 
+        HOUR(event_date), 
+        WEEKDAY(event_date)
+)
+SELECT 
+    hour_of_day,
+    COUNT(DISTINCT session) as sessions_count,
+    COUNT(DISTINCT user) as users_count,
+    -- Engagement metrics
+    ROUND(AVG(pages_types_visited), 2) as avg_page_types_per_session,
+    ROUND(AVG(products_viewed), 2) as avg_products_per_session,
+    COUNT(DISTINCT navigation_path) as unique_paths
+FROM user_patterns
+GROUP BY hour_of_day
+ORDER BY hour_of_day;
+```
+
+This view analyzes temporal user behavior patterns:
+- Hourly activity distribution
+- Session engagement metrics
+- Navigation path analysis
+- User interaction patterns throughout the day
+
+#### Cohort Analysis View
+```sql
+CREATE VIEW vw_cohort_analysis AS
+WITH user_first_visit AS (
+    SELECT 
+        user,
+        DATE(MIN(event_date)) as first_visit_date
+    FROM user_events
+    GROUP BY user
+),
+user_activity AS (
+    SELECT 
+        ufv.user,
+        ufv.first_visit_date,
+        DATE(d.event_date) as activity_date,
+        DATEDIFF(DATE(d.event_date), ufv.first_visit_date) as days_since_first_visit
+    FROM user_first_visit ufv
+    JOIN user_events d ON ufv.user = d.user
+)
+SELECT 
+    first_visit_date as cohort_date,
+    days_since_first_visit,
+    COUNT(DISTINCT user) as active_users,
+    -- Retention relative to day one
+    ROUND(COUNT(DISTINCT user) / 
+          FIRST_VALUE(COUNT(DISTINCT user)) OVER (
+              PARTITION BY first_visit_date 
+              ORDER BY days_since_first_visit
+          ) * 100, 2) as retention_rate
+FROM user_activity
+GROUP BY first_visit_date, days_since_first_visit
+ORDER BY first_visit_date, days_since_first_visit;
+```
+
+This view performs cohort analysis to track user retention:
+- Groups users by their first visit date
+- Tracks user activity over time
+- Calculates retention rates for each cohort
+- Measures user engagement longevity
+
+The combination of these views provides a comprehensive understanding of:
+- Customer journey and conversion funnel
+- Temporal usage patterns
+- User engagement and behavior
+- Navigation flow analysis
+- Cohort-based retention metrics
+
 ### Database Schema
 The `user_events` table is optimized with indexes for common query patterns:
 - Primary key on `id`
