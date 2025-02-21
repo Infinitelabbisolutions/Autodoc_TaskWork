@@ -409,14 +409,14 @@ python src/data_ingestion.py
 - Add configuration file support
 
 ## 👤 Author
-[Your Name]
+Vítor Marques
+Senior Data Analyst
 
 ## 📫 Contact
-- LinkedIn: [your profile]
-- Email: [your email]
+- LinkedIn: https://www.linkedin.com/in/vitormarquesds/
+- Email: vitormarques0328@gmail.com
 
 ## 🙏 Acknowledgments
 Thanks to the Autodoc team for the opportunity to develop this project.
 
 ---
-⭐ If this project was helpful to you, consider giving it a star!
