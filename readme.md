@@ -413,7 +413,7 @@ Vítor Marques
 Senior Data Analyst
 
 ## 📫 Contact
-- LinkedIn: https://www.linkedin.com/in/vitormarquesds/
+- LinkedIn: [Vítor Marques](https://www.linkedin.com/in/vitormarquesds/)
 - Email: vitormarques0328@gmail.com
 
 ## 🙏 Acknowledgments
