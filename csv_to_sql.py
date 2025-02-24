@@ -5,6 +5,7 @@ from typing import Iterator
 import logging
 from datetime import datetime
 
+# Configurar logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,7 @@ def process_csv_in_chunks(filename: str, chunksize: int = 10000) -> Iterator[pd.
     """
     try:
         for chunk in pd.read_csv(filename, chunksize=chunksize):
+            # Converter event_date para datetime
             chunk['event_date'] = pd.to_datetime(chunk['event_date'])
             yield chunk
     except Exception as e:
@@ -77,6 +79,7 @@ def import_csv_to_mysql(host: str, user: str, password: str, database: str, csv_
     total_records = 0
 
     try:
+        # Estabelecer conexão com MySQL
         connection = mysql.connector.connect(
             host=host,
             user=user,
@@ -84,18 +87,23 @@ def import_csv_to_mysql(host: str, user: str, password: str, database: str, csv_
             database=database,
             charset='utf8mb4',
             use_unicode=True,
-            buffered=True
+            buffered=True,
+            auth_plugin='mysql_native_password',
+            allow_local_infile=True
         )
         
         if connection.is_connected():
             cursor = connection.cursor()
             
+            # Criar tabela se não existir
             create_table_if_not_exists(cursor)
             
+            # Processar e inserir dados em chunks
             for chunk in process_csv_in_chunks(csv_file, chunksize):
                 insert_data_batch(connection, cursor, chunk)
                 total_records += len(chunk)
                 
+            # Otimizar a tabela após todas as inserções
             cursor.execute("OPTIMIZE TABLE user_events")
             
             end_time = datetime.now()
@@ -114,7 +122,7 @@ def import_csv_to_mysql(host: str, user: str, password: str, database: str, csv_
             logger.info("Conexão MySQL fechada")
 
 if __name__ == "__main__":
-    
+    # Credenciais do MySQL configuradas
     mysql_config = {
         'host': 'localhost',
         'user': 'root',
@@ -122,10 +130,10 @@ if __name__ == "__main__":
         'database': 'autodoc'
     }
     
-    
+    # CONFIGURE AQUI: Caminho do seu arquivo CSV
     config = {
-        'csv_file': 'data.csv',  
-        'chunksize': 10000        
+        'csv_file': 'paste.txt',  # Caminho para seu arquivo CSV
+        'chunksize': 10000        # Ajuste conforme necessário
     }
     
     try:

@@ -214,57 +214,35 @@ The project includes several analytical views developed in MySQL Workbench 8.0 t
 #### Customer Journey Analysis View
 ```sql
 CREATE VIEW vw_customer_journey AS
-WITH session_start AS (
-    -- Identifies first page of each session
+WITH journey AS (
     SELECT 
         session,
         user,
-        MIN(page_type) as first_page_type,
-        MIN(event_date) as session_start_time
+        page_type,
+        FIRST_VALUE(page_type) OVER (
+            PARTITION BY session 
+            ORDER BY event_date
+        ) as first_page_type  
     FROM user_events
-    GROUP BY session, user
-),
-journey_steps AS (
-    -- Complete journey analysis
-    SELECT 
-        d.session,
-        d.user,
-        ss.first_page_type,
-        COUNT(DISTINCT CASE WHEN d.page_type = 'listing_page' THEN d.event_date END) as listing_views,
-        COUNT(DISTINCT CASE WHEN d.page_type = 'search_listing_page' THEN d.event_date END) as search_views,
-        COUNT(DISTINCT CASE WHEN d.page_type = 'product_page' THEN d.event_date END) as product_views,
-        COUNT(DISTINCT d.product) as unique_products_viewed,
-        -- Session duration in minutes
-        TIMESTAMPDIFF(MINUTE, MIN(d.event_date), MAX(d.event_date)) as session_duration_minutes
-    FROM user_events d
-    JOIN session_start ss ON d.session = ss.session
-    GROUP BY d.session, d.user, ss.first_page_type
+    WHERE session IS NOT NULL
 )
 SELECT 
-    first_page_type,
-    COUNT(DISTINCT session) as total_sessions,
-    COUNT(DISTINCT user) as unique_users,
-    -- Funnel metrics
-    SUM(listing_views) as total_listing_views,
-    SUM(search_views) as total_search_views,
-    SUM(product_views) as total_product_views,
-    -- Averages per session
-    ROUND(AVG(unique_products_viewed), 2) as avg_products_per_session,
-    ROUND(AVG(session_duration_minutes), 2) as avg_session_duration,
-    -- Funnel conversion rates
-    ROUND(SUM(CASE WHEN product_views > 0 THEN 1 ELSE 0 END) / 
-          COUNT(DISTINCT session) * 100, 2) as product_view_rate,
-    ROUND(SUM(CASE WHEN search_views > 0 THEN 1 ELSE 0 END) / 
-          COUNT(DISTINCT session) * 100, 2) as search_view_rate
-FROM journey_steps
-GROUP BY first_page_type;
+    first_page_type,         
+    page_type,
+    COUNT(DISTINCT session) as sessions,
+    COUNT(DISTINCT user) as users,
+    COUNT(*) as page_views
+FROM journey
+GROUP BY 
+    first_page_type,         
+    page_type;
 ```
 
-This view provides comprehensive metrics about the customer journey:
-- Session analysis by entry point (first_page_type)
-- User engagement metrics (views, duration)
-- Funnel conversion rates
-- Product interaction patterns
+This view analyzes user journey patterns by:
+- Tracking the first page type visited in each session
+- Analyzing subsequent page type visits
+- Measuring session and user counts for each page type transition
+- Calculating total page views for each combination
 
 #### User Behavior Analysis View
 ```sql
@@ -420,3 +398,4 @@ Senior Data Analyst
 Thanks to the Autodoc team for the opportunity to develop this project.
 
 ---
+⭐ If this project was helpful to you, consider giving it a star!
