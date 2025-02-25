@@ -5,27 +5,26 @@ from typing import Iterator
 import logging
 from datetime import datetime
 
-# Configurar logging
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def process_csv_in_chunks(filename: str, chunksize: int = 10000) -> Iterator[pd.DataFrame]:
     """
-    Processa o arquivo CSV em chunks para economizar memória.
+    Processes CSV file in chunks to optimize memory usage.
     """
     try:
         for chunk in pd.read_csv(filename, chunksize=chunksize):
-            # Converter event_date para datetime
             chunk['event_date'] = pd.to_datetime(chunk['event_date'])
             yield chunk
     except Exception as e:
-        logger.error(f"Erro ao ler o arquivo CSV: {e}")
+        logger.error(f"Error reading CSV file: {e}")
         raise
 
 def create_table_if_not_exists(cursor) -> None:
     """
-    Cria a tabela se ela não existir.
-    Inclui índices para otimização de consultas comuns.
+    Creates table with optimized structure and indexes.
+    Includes indexes for common query patterns.
     """
     create_table_query = """
     CREATE TABLE IF NOT EXISTS user_events (
@@ -46,14 +45,14 @@ def create_table_if_not_exists(cursor) -> None:
     """
     try:
         cursor.execute(create_table_query)
-        logger.info("Tabela criada ou já existente")
+        logger.info("Table created or already exists")
     except Error as e:
-        logger.error(f"Erro ao criar tabela: {e}")
+        logger.error(f"Error creating table: {e}")
         raise
 
 def insert_data_batch(connection, cursor, chunk: pd.DataFrame) -> None:
     """
-    Insere dados em lotes usando executemany.
+    Inserts data in batches using executemany for better performance.
     """
     insert_query = """
     INSERT INTO user_events 
@@ -64,22 +63,26 @@ def insert_data_batch(connection, cursor, chunk: pd.DataFrame) -> None:
         values = chunk.values.tolist()
         cursor.executemany(insert_query, values)
         connection.commit()
-        logger.info(f"Inseridos {len(values)} registros com sucesso")
+        logger.info(f"Successfully inserted {len(values)} records")
     except Error as e:
-        logger.error(f"Erro ao inserir lote: {e}")
+        logger.error(f"Error inserting batch: {e}")
         connection.rollback()
         raise
 
 def import_csv_to_mysql(host: str, user: str, password: str, database: str, csv_file: str, 
                        chunksize: int = 10000) -> None:
     """
-    Função principal que coordena a importação dos dados.
+    Main function coordinating the data import process.
+    Features:
+    - Chunk-based processing
+    - Performance monitoring
+    - Error handling
+    - Transaction management
     """
     start_time = datetime.now()
     total_records = 0
 
     try:
-        # Estabelecer conexão com MySQL
         connection = mysql.connector.connect(
             host=host,
             user=user,
@@ -87,42 +90,37 @@ def import_csv_to_mysql(host: str, user: str, password: str, database: str, csv_
             database=database,
             charset='utf8mb4',
             use_unicode=True,
-            buffered=True,
-            auth_plugin='mysql_native_password',
-            allow_local_infile=True
+            buffered=True
         )
         
         if connection.is_connected():
             cursor = connection.cursor()
             
-            # Criar tabela se não existir
             create_table_if_not_exists(cursor)
             
-            # Processar e inserir dados em chunks
             for chunk in process_csv_in_chunks(csv_file, chunksize):
                 insert_data_batch(connection, cursor, chunk)
                 total_records += len(chunk)
                 
-            # Otimizar a tabela após todas as inserções
             cursor.execute("OPTIMIZE TABLE user_events")
             
             end_time = datetime.now()
             duration = (end_time - start_time).total_seconds()
-            logger.info(f"Importação concluída! Tempo total: {duration:.2f} segundos")
-            logger.info(f"Total de registros importados: {total_records}")
+            logger.info(f"Import completed! Total time: {duration:.2f} seconds")
+            logger.info(f"Total records imported: {total_records}")
 
     except Error as e:
-        logger.error(f"Erro na conexão MySQL: {e}")
+        logger.error(f"MySQL connection error: {e}")
         raise
     
     finally:
         if 'connection' in locals() and connection.is_connected():
             cursor.close()
             connection.close()
-            logger.info("Conexão MySQL fechada")
+            logger.info("MySQL connection closed")
 
 if __name__ == "__main__":
-    # Credenciais do MySQL configuradas
+    # Configuration
     mysql_config = {
         'host': 'localhost',
         'user': 'root',
@@ -130,10 +128,9 @@ if __name__ == "__main__":
         'database': 'autodoc'
     }
     
-    # CONFIGURE AQUI: Caminho do seu arquivo CSV
     config = {
-        'csv_file': 'paste.txt',  # Caminho para seu arquivo CSV
-        'chunksize': 10000        # Ajuste conforme necessário
+        'csv_file': 'data.csv',
+        'chunksize': 10000
     }
     
     try:
@@ -146,4 +143,4 @@ if __name__ == "__main__":
             chunksize=config['chunksize']
         )
     except Exception as e:
-        logger.error(f"Erro durante a importação: {e}")
+        logger.error(f"Error during import: {e}")
