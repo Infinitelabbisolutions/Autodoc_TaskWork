@@ -14,8 +14,8 @@ venv
 develop-eggs/
 dist/
 downloads/
-csv_to_sql.py
-data.csv
+/csv_to_sql.py
+/data.csv
 .gitattributes
 eggs/
 .eggs/
