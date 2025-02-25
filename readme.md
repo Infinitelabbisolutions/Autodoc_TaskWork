@@ -244,6 +244,43 @@ This view analyzes user journey patterns by:
 - Measuring session and user counts for each page type transition
 - Calculating total page views for each combination
 
+#### Customer Funnel Analysis View
+```sql
+CREATE OR REPLACE VIEW customer_funnel_analysis AS
+WITH session_steps AS (
+    SELECT 
+        session,
+        user,
+        MIN(DATE(event_date)) AS first_visit_date,
+        MIN(CASE WHEN event_type = 'view' THEN page_type END) AS first_page_visited,
+        COUNT(DISTINCT CASE WHEN event_type = 'view' THEN session END) AS views,
+        COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session END) AS add_to_cart_sessions,
+        COUNT(DISTINCT CASE WHEN event_type = 'order' THEN session END) AS purchase_sessions
+    FROM USER_EVENTS
+    GROUP BY session, user
+)
+SELECT 
+    first_page_visited,
+    COUNT(DISTINCT session) AS total_sessions,
+    COUNT(DISTINCT user) AS unique_users,
+    SUM(views) AS total_views,
+    SUM(add_to_cart_sessions) AS total_add_to_cart,
+    SUM(purchase_sessions) AS total_purchases,
+    ROUND(SUM(add_to_cart_sessions) * 100.0 / NULLIF(SUM(views), 0), 2) AS add_to_cart_rate,
+    ROUND(SUM(purchase_sessions) * 100.0 / NULLIF(SUM(add_to_cart_sessions), 0), 2) AS purchase_conversion_rate
+FROM session_steps
+GROUP BY first_page_visited
+ORDER BY total_sessions DESC;
+```
+
+This view provides complete e-commerce funnel metrics:
+- First page visited in each session
+- Number of sessions and unique users
+- Conversion rates through the purchase funnel
+- Add-to-cart rates by entry point
+- Purchase conversion rates by entry point
+- Funnel progression segmented by first page visited
+
 #### User Behavior Analysis View
 ```sql
 CREATE VIEW vw_user_behavior AS 
