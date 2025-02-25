@@ -116,30 +116,34 @@ ORDER BY
 The following SQL query identifies users with unusual behavior patterns based on their interaction with the purchase funnel:
 
 ```sql
-SELECT 
-    user,
-    COUNT(DISTINCT session) AS session_count,
-    COUNT(DISTINCT CASE WHEN event_type = 'view' THEN session END) AS view_sessions,
-    COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session END) AS add_to_cart_sessions,
-    COUNT(DISTINCT CASE WHEN event_type = 'order' THEN session END) AS purchase_sessions,
-    CASE
-        WHEN COUNT(DISTINCT CASE WHEN event_type = 'view' THEN session END) > 5
-             AND COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session END) = 0
-             AND COUNT(DISTINCT CASE WHEN event_type = 'order' THEN session END) = 0 THEN 'Unusual'
-        WHEN COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session END) > 0
-             AND COUNT(DISTINCT CASE WHEN event_type = 'order' THEN session END) = 0 THEN 'Unusual'
-        WHEN COUNT(DISTINCT session) > 10
-             AND COUNT(DISTINCT CASE WHEN event_type = 'order' THEN session END) = 0 THEN 'Unusual'
-        ELSE 'Normal'
-    END AS behavior_status
-FROM 
-    user_events
-GROUP BY 
-    user
-HAVING 
-    behavior_status != 'Normal'
-ORDER BY 
-    behavior_status DESC;
+WITH user_stats AS (
+    SELECT 
+        user,
+        COUNT(DISTINCT session) AS total_sessions,
+        COUNT(DISTINCT CASE WHEN event_type = 'view' THEN session END) AS view_sessions,
+        COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session END) AS add_to_cart_sessions,
+        COUNT(DISTINCT CASE WHEN event_type = 'order' THEN session END) AS order_sessions
+    FROM user_events
+    GROUP BY user
+)
+SELECT *
+FROM (
+    SELECT 
+        user,
+        total_sessions,
+        view_sessions,
+        add_to_cart_sessions,
+        order_sessions,
+        CASE
+            WHEN view_sessions > 5 AND add_to_cart_sessions = 0 AND order_sessions = 0 THEN 'Unusual'
+            WHEN add_to_cart_sessions > 0 AND order_sessions = 0 THEN 'Unusual'
+            WHEN total_sessions > 10 AND order_sessions = 0 THEN 'Unusual'
+            ELSE 'Normal'
+        END AS behavior_status
+    FROM user_stats
+) AS t
+WHERE behavior_status <> 'Normal'
+ORDER BY behavior_status DESC;
 ```
 
 #### Key Components of Anomaly Detection
@@ -170,6 +174,14 @@ This analysis provides significant business value by:
 - Detecting possible technical issues with the checkout process
 - Revealing segments of users who may need special attention or incentives
 - Differentiating between normal shopping behavior and problematic patterns
+
+It's important to note that the definition of anomalous behavior highly depends on parameters that can be considered unusual by the product team. The thresholds used in this analysis (5+ view sessions without add-to-cart, any cart abandonment, 10+ sessions without purchase) are initial suggestions and should be refined based on:
+- Industry benchmarks
+- Historical data patterns
+- Product team's business knowledge
+- Specific business goals and KPIs
+
+These parameters should be regularly reviewed and adjusted as the product evolves and as more data becomes available about typical user behavior patterns.
 
 ## 🚀 How to Run
 
