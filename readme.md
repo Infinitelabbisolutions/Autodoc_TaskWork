@@ -1,7 +1,13 @@
 # Data Analysis Project - Autodoc
 
 ## 📊 About the Project
-This project was developed as part of an Autodoc task, implementing a robust data pipeline for processing and analyzing user events data. The solution includes a scalable ETL process using Python for data ingestion into MySQL, followed by SQL analysis and Power BI visualizations.
+This project was developed as part of an Autodoc task, implementing a data analytics pipeline. The solution involves Python for initial data ingestion into MySQL, followed by SQL-based ETL transformations and analysis, and finally Power BI visualizations.
+
+The workflow includes:
+1. Data ingestion from CSV to MySQL using Python
+2. Data transformation and analysis using SQL views
+3. Funnel analysis and behavior pattern extraction
+4. Visualization of insights using Power BI
 
 ## 🛠️ Technologies Used
 - **Python 3.x** - Data processing and MySQL integration
@@ -39,14 +45,14 @@ project-autodoc/
 ## 💻 Implementation Details
 
 ### Data Ingestion Process
-The project implements a memory-efficient ETL process that:
+The project implements a memory-efficient data ingestion process that:
 - Processes large CSV files in chunks to manage memory usage
 - Creates optimized MySQL table structure with appropriate indexes
 - Implements batch processing for efficient data insertion
 - Includes comprehensive error handling and logging
 - Maintains data integrity through transaction management
 
-### Python Implementation
+### Python Implementation for Data Ingestion
 
 The ETL process is implemented in Python with a focus on efficiency and reliability. Here's the complete implementation:
 
@@ -208,8 +214,14 @@ Key features of the implementation:
 - UTF-8 support for international characters
 - Automated table creation with optimized indexes
 
-### SQL Analysis
-The project includes several analytical views developed in MySQL Workbench 8.0 to understand user behavior and customer journey. These views use MySQL-specific features and syntax - please note that adjustments may be needed if you're using a different database system:
+### SQL ETL Process and Analysis
+The project uses MySQL views to transform raw data into analytical insights. The ETL process begins with SQL transformations that:
+- Create customer journey analysis views
+- Build temporal behavior analysis models
+- Develop cohort retention analysis
+- Construct purchase funnel metrics
+
+The SQL views serve both as transformation layers and as analytical endpoints for Power BI visualization.
 
 #### Customer Journey Analysis View
 ```sql
