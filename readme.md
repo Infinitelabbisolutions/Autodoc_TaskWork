@@ -25,19 +25,6 @@ The product owner wants to change the marketing strategy based on customers' beh
   - Custom queries for funnel, first-session, and anomaly detection analysis
 - **Power BI** - Data visualization and dashboards
 
-## 📁 Project Structure
-```
-project-autodoc/
-│
-├── data/                       # Raw and processed data
-│   └── data.csv               # Source CSV file
-├── sql/                       # SQL queries
-│   ├── customer_funnel.sql    # Customer funnel analysis
-│   ├── first_session.sql      # First session analysis
-│   └── anomaly_detection.sql  # Anomalous behavior detection
-├── powerbi/                  # Power BI dashboard files
-└── README.md
-```
 
 ## 💻 Implementation Details
 
