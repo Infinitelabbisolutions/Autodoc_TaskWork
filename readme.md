@@ -183,20 +183,7 @@ It's important to note that the definition of anomalous behavior highly depends 
 
 These parameters should be regularly reviewed and adjusted as the product evolves and as more data becomes available about typical user behavior patterns.
 
-## 🚀 How to Run
 
-1. Import the tracking data into your MySQL database
-2. Execute the SQL scripts to create the analyses:
-   ```
-   source /path/to/customer_funnel.sql
-   source /path/to/first_session.sql
-   source /path/to/anomaly_detection.sql
-   ```
-3. Connect Power BI to the MySQL database
-4. Create visualizations based on all analyses:
-   - Funnel visualization showing drop-off rates
-   - Time series chart showing first-session product viewers by day
-   - Dashboard for monitoring anomalous user behavior
 
 ## 📊 Key Deliverables
 
