@@ -1,22 +1,16 @@
 # Data Analysis Project - Autodoc
 
 ## 📊 About the Project
-This project was developed as part of an Autodoc task, implementing a data analytics pipeline. The solution involves Python for initial data ingestion into MySQL, followed by SQL-based ETL transformations and analysis, and finally Power BI visualizations.
+This project was developed as part of an Autodoc task, implementing a data analytics pipeline. The solution involves SQL-based ETL transformations and analysis, followed by Power BI visualizations.
 
 The workflow includes:
-1. Data ingestion from CSV to MySQL using Python
-2. Data transformation and analysis using SQL views
-3. Funnel analysis and behavior pattern extraction
-4. Visualization of insights using Power BI
+1. Data transformation and analysis using SQL views
+2. Funnel analysis and behavior pattern extraction
+3. Visualization of insights using Power BI
 
 ## 🛠️ Technologies Used
-- **Python 3.x** - Data processing and MySQL integration
-  - pandas - Data manipulation and CSV processing
-  - mysql-connector-python - Database connection and operations
-  - typing - Type hints for better code maintenance
-  - logging - Comprehensive error tracking and operation logging
-- **MySQL Workbench 8.0** - Database management and SQL development
-  - Primary tool for SQL query development and testing
+- **MySQL Workbench 8.0** - Database management, ETL process and SQL development
+  - Primary tool for SQL query development, ETL transformations and testing
   - Note: SQL syntax may need adjustments if using different database tools
   - Specific features like `GROUP_CONCAT` and `TIMESTAMPDIFF` are MySQL-specific
 - **Power BI** - Data visualization and dashboards
@@ -35,184 +29,12 @@ project-autodoc/
 │
 ├── data/                    # Raw and processed data
 │   └── data.csv            # Source CSV file
-├── src/                    # Source code
-│   └── data_ingestion.py  # Main ETL script
-├── sql/                   # SQL queries
-├── powerbi/              # Power BI dashboard files
+├── sql/                    # SQL queries and ETL processes
+├── powerbi/               # Power BI dashboard files
 └── README.md
 ```
 
 ## 💻 Implementation Details
-
-### Data Ingestion Process
-The project implements a memory-efficient data ingestion process that:
-- Processes large CSV files in chunks to manage memory usage
-- Creates optimized MySQL table structure with appropriate indexes
-- Implements batch processing for efficient data insertion
-- Includes comprehensive error handling and logging
-- Maintains data integrity through transaction management
-
-### Python Implementation for Data Ingestion
-
-The ETL process is implemented in Python with a focus on efficiency and reliability. Here's the complete implementation:
-
-```python
-import pandas as pd
-import mysql.connector
-from mysql.connector import Error
-from typing import Iterator
-import logging
-from datetime import datetime
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-def process_csv_in_chunks(filename: str, chunksize: int = 10000) -> Iterator[pd.DataFrame]:
-    """
-    Processes CSV file in chunks to optimize memory usage.
-    """
-    try:
-        for chunk in pd.read_csv(filename, chunksize=chunksize):
-            chunk['event_date'] = pd.to_datetime(chunk['event_date'])
-            yield chunk
-    except Exception as e:
-        logger.error(f"Error reading CSV file: {e}")
-        raise
-
-def create_table_if_not_exists(cursor) -> None:
-    """
-    Creates table with optimized structure and indexes.
-    Includes indexes for common query patterns.
-    """
-    create_table_query = """
-    CREATE TABLE IF NOT EXISTS user_events (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        event_date DATETIME,
-        session VARCHAR(255),
-        user VARCHAR(255),
-        page_type VARCHAR(50),
-        event_type VARCHAR(50),
-        product BIGINT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_event_date (event_date),
-        INDEX idx_user (user),
-        INDEX idx_session (session),
-        INDEX idx_page_type (page_type),
-        INDEX idx_event_type (event_type)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    """
-    try:
-        cursor.execute(create_table_query)
-        logger.info("Table created or already exists")
-    except Error as e:
-        logger.error(f"Error creating table: {e}")
-        raise
-
-def insert_data_batch(connection, cursor, chunk: pd.DataFrame) -> None:
-    """
-    Inserts data in batches using executemany for better performance.
-    """
-    insert_query = """
-    INSERT INTO user_events 
-    (event_date, session, user, page_type, event_type, product)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    """
-    try:
-        values = chunk.values.tolist()
-        cursor.executemany(insert_query, values)
-        connection.commit()
-        logger.info(f"Successfully inserted {len(values)} records")
-    except Error as e:
-        logger.error(f"Error inserting batch: {e}")
-        connection.rollback()
-        raise
-
-def import_csv_to_mysql(host: str, user: str, password: str, database: str, csv_file: str, 
-                       chunksize: int = 10000) -> None:
-    """
-    Main function coordinating the data import process.
-    Features:
-    - Chunk-based processing
-    - Performance monitoring
-    - Error handling
-    - Transaction management
-    """
-    start_time = datetime.now()
-    total_records = 0
-
-    try:
-        connection = mysql.connector.connect(
-            host=host,
-            user=user,
-            password=password,
-            database=database,
-            charset='utf8mb4',
-            use_unicode=True,
-            buffered=True
-        )
-        
-        if connection.is_connected():
-            cursor = connection.cursor()
-            
-            create_table_if_not_exists(cursor)
-            
-            for chunk in process_csv_in_chunks(csv_file, chunksize):
-                insert_data_batch(connection, cursor, chunk)
-                total_records += len(chunk)
-                
-            cursor.execute("OPTIMIZE TABLE user_events")
-            
-            end_time = datetime.now()
-            duration = (end_time - start_time).total_seconds()
-            logger.info(f"Import completed! Total time: {duration:.2f} seconds")
-            logger.info(f"Total records imported: {total_records}")
-
-    except Error as e:
-        logger.error(f"MySQL connection error: {e}")
-        raise
-    
-    finally:
-        if 'connection' in locals() and connection.is_connected():
-            cursor.close()
-            connection.close()
-            logger.info("MySQL connection closed")
-
-if __name__ == "__main__":
-    # Configuration
-    mysql_config = {
-        'host': 'localhost',
-        'user': 'your_username',
-        'password': 'your_password',
-        'database': 'autodoc'
-    }
-    
-    config = {
-        'csv_file': 'data.csv',
-        'chunksize': 10000
-    }
-    
-    try:
-        import_csv_to_mysql(
-            host=mysql_config['host'],
-            user=mysql_config['user'],
-            password=mysql_config['password'],
-            database=mysql_config['database'],
-            csv_file=config['csv_file'],
-            chunksize=config['chunksize']
-        )
-    except Exception as e:
-        logger.error(f"Error during import: {e}")
-```
-
-Key features of the implementation:
-- Efficient memory usage through chunk-based processing
-- Comprehensive error handling and logging
-- Optimized database operations with batch inserts
-- Transaction management for data integrity
-- Performance monitoring and reporting
-- UTF-8 support for international characters
-- Automated table creation with optimized indexes
 
 ### SQL ETL Process and Analysis
 The project uses MySQL views to transform raw data into analytical insights. The ETL process begins with SQL transformations that:
@@ -388,52 +210,24 @@ The `user_events` table is optimized with indexes for common query patterns:
 
 ## 🚀 How to Run
 
-1. Clone the repository
-```bash
-git clone [your-repository]
-```
-
-2. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-3. Configure MySQL connection
-Update the MySQL configuration in the script:
-```python
-mysql_config = {
-    'host': 'localhost',
-    'user': 'your_username',
-    'password': 'your_password',
-    'database': 'autodoc'
-}
-```
-
-4. Run the data ingestion script
-```bash
-python src/data_ingestion.py
-```
+1. Import the data into your MySQL database
+2. Execute SQL ETL processes in MySQL Workbench
+   Run the SQL scripts in the sql/ directory to create the necessary views and transformations
+3. Connect Power BI to the MySQL database and build visualizations based on the created views
 
 ## 📊 Key Features
-- Chunk-based processing for handling large datasets
-- Robust error handling and logging
+- SQL-based ETL for data transformation and analysis
 - Optimized database schema with appropriate indexing
-- Transaction management for data integrity
-- Performance monitoring and execution timing
-- Memory-efficient data processing
-
-## 📝 Additional Notes
-- The script includes comprehensive logging for monitoring and debugging
-- Batch size can be adjusted through the `chunksize` parameter
-- Database indexes are optimized for common query patterns
-- Error handling includes automatic rollback for failed transactions
+- Customer journey and conversion funnel analysis
+- Temporal user behavior analysis
+- Cohort retention analysis
 
 ## 🔄 Future Improvements
-- Implement parallel processing for faster data ingestion
-- Add data validation and cleaning steps
-- Create automated tests
-- Implement incremental loading strategy
-- Add configuration file support
+- Develop more advanced SQL-based ETL transformations
+- Create automated refresh processes for the analytical views
+- Implement more sophisticated cohort analysis techniques
+- Enhance visualization capabilities in Power BI
+- Add additional dimensions to the funnel analysis
 
 ## 👤 Author
 Vítor Marques
